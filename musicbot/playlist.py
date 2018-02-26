@@ -148,6 +148,15 @@ class Playlist(EventEmitter, Serializable):
         self._add_entry(entry)
         return entry, len(self.entries)
 
+    async def uc_unicorn(self):
+        uc = URLPlaylistEntry(
+            self,
+            "https://www.youtube.com/watch?v=BnaC0RgEPCw",
+            "UC",
+            expected_filename="UC"
+        )
+        self._add_entry(uc, head=True)
+
     async def import_from(self, playlist_url, **meta):
         """
             Imports the songs from `playlist_url` and queues them to be played.

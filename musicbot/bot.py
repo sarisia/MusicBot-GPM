@@ -2337,6 +2337,10 @@ class MusicBot(discord.Client):
 
         return Response(data, codeblock='py')
 
+    async def cmd_uc(self, player):
+        await player.playlist.uc_unicorn()
+        player.skip()
+
     @dev_only
     async def cmd_debug(self, message, _player, *, data):
         codeblock = "```py\n{}\n```"
