@@ -2399,14 +2399,11 @@ class MusicBot(discord.Client):
                 deleted = await self.purge_from(channel, check=check, limit=search_range, before=message)
                 return Response(self.str.get('cmd-clean-reply', 'Cleaned up {0} message{1}.').format(len(deleted), 's' * bool(deleted)), delete_after=15)
 
-    async def cmd_pldump(self, channel, song_url):
+    async def _pldump(self, song_url):
         """
-        Usage:
-            {command_prefix}pldump url
-
-        Dumps the individual urls of a playlist
+        Function exported from cmd_pldump.
+        Used for cmd_pldump and cmd_add
         """
-
         try:
             info = await self.downloader.extract_info(self.loop, song_url.strip('<>'), download=False, process=False)
         except Exception as e:
@@ -2422,7 +2419,7 @@ class MusicBot(discord.Client):
             if info.get('url', None) != info.get('webpage_url', info.get('url', None)):
                 raise exceptions.CommandError("This does not seem to be a playlist.", expire_in=25)
             else:
-                return await self.cmd_pldump(channel, info.get(''))
+                return await self._pldump(info.get(''))
 
         linegens = defaultdict(lambda: None, **{
             "youtube":    lambda d: 'https://www.youtube.com/watch?v=%s' % d['id'],
@@ -2434,10 +2431,24 @@ class MusicBot(discord.Client):
 
         if not exfunc:
             raise exceptions.CommandError("Could not extract info from input url, unsupported playlist type.", expire_in=25)
+        
+        dumped = []
+        for item in info['entries']:
+            dumped.append(exfunc(item))
+
+        return dumped
+
+    async def cmd_pldump(self, channel, song_url):
+        """
+        Usage:
+            {command_prefix}pldump url
+
+        Dumps the individual urls of a playlist
+        """
 
         with BytesIO() as fcontent:
-            for item in info['entries']:
-                fcontent.write(exfunc(item).encode('utf8') + b'\n')
+            for item in await self._pldump(song_url):
+                fcontent.write(item + b'\n')
 
             fcontent.seek(0)
             await self.send_file(channel, fcontent, filename='playlist.txt', content="Here's the url dump for <%s>" % song_url)
@@ -2683,8 +2694,7 @@ class MusicBot(discord.Client):
 
         Queue song to be played after now playing.
         """
-        res = await self.cmd_play(message, player, channel, author, permissions, leftover_args, song_url, playnext=True)
-        return res
+        return await self.cmd_play(message, player, channel, author, permissions, leftover_args, song_url, playnext=True)
 
     # command aliases
     # dirty but might better than impl new alias manager...?
@@ -2694,34 +2704,68 @@ class MusicBot(discord.Client):
         Alias of {command_prefix}queue
         See {command_prefix}help queue instead.
         """
-        res = await self.cmd_queue(channel, player)
-        return res
+        return await self.cmd_queue(channel, player)
 
     async def cmd_p(self, message, player, channel, author, permissions, leftover_args, song_url):
         """
         Alias of {command_prefix}play
         See {command_prefix}help play instead.
         """
-        res = await self.cmd_play(message, player, channel, author, permissions, leftover_args, song_url)
-        return res
+        return await self.cmd_play(message, player, channel, author, permissions, leftover_args, song_url)
 
     async def cmd_s(self, player, channel, author, message, permissions, voice_channel, param=''):
         """
         Alias of {command_prefix}skip
         See {command_prefix}help skip instead.
         """
-        res = await self.cmd_skip(player, channel, author, message, permissions, voice_channel, param='')
-        return res
-
+        return await self.cmd_skip(player, channel, author, message, permissions, voice_channel, param='')
+        
     async def cmd_uc(self, player):
         """
         Usage:
             {command_prefix}uc
 
-        U   C
+        U                       C
         """
         await player.playlist.uc_unicorn()
         player.skip()
+
+    async def cmd_add(self, song_url):
+        """
+        Usage:
+            {command_prefix}add song_url
+
+        Add song or playlist to autoplaylist.
+        """
+        try:
+            info = await self.downloader.extract_info(self.loop, song_url.strip('<>'), download=False, process=False)
+        except Exception:
+            raise exceptions.CommandError("Failed to extract info. Invalid URL.")
+        
+        if not info:
+            raise exceptions.CommandError("Failed to extract info. No data.")
+
+        if info['extractor'] in ["soundcloud:set", "youtube:playlist"]:
+            dumped = await self._pldump(song_url)
+            diffs = list( set(dumped) - set(self.autoplaylist) )
+            if diffs:
+                self.autoplaylist.extend(diffs)
+                res = f"Added {len(diffs)} songs from playlist!"
+            else:
+                res = "Already exists."
+        elif info['extractor'] in ["soundcloud", "youtube"]:
+            if not song_url in self.autoplaylist:
+                self.autoplaylist.append(song_url)
+                res = "Added a song from url!"
+            else:
+                res = "Already exists."
+        else:
+            res = "Given url is not song or playlist."
+
+        self.auto_playlist = load_file(self.config.auto_playlist_file)
+        write_file(self.config.auto_playlist_file, self.autoplaylist)
+
+        return Response(res)
 
     @dev_only
     async def cmd_debug(self, message, _player, *, data):
