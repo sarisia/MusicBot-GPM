@@ -2677,6 +2677,12 @@ class MusicBot(discord.Client):
         return Response(data, codeblock='py')
 
     async def cmd_uc(self, player):
+        """
+        Usage:
+            {command_prefix}uc
+
+        U   C
+        """
         await player.playlist.uc_unicorn()
         player.skip()
 
