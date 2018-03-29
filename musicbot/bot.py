@@ -1410,7 +1410,7 @@ class MusicBot(discord.Client):
             )
         return True
 
-    async def cmd_play(self, message, player, channel, author, permissions, leftover_args, song_url):
+    async def cmd_play(self, message, player, channel, author, permissions, leftover_args, song_url, playnext=False):
         """
         Usage:
             {command_prefix}play song_link
@@ -1643,7 +1643,7 @@ class MusicBot(discord.Client):
                     )
 
                 try:
-                    entry, position = await player.playlist.add_entry(song_url, channel=channel, author=author)
+                    entry, position = await player.playlist.add_entry(song_url, channel=channel, author=author, playnext=playnext)
 
                 except exceptions.WrongEntryTypeError as e:
                     if e.use_url == song_url:
@@ -2676,15 +2676,16 @@ class MusicBot(discord.Client):
 
         return Response(data, codeblock='py')
 
-    async def cmd_playnext(self, player, song_url):
+    async def cmd_playnext(self, message, player, channel, author, permissions, leftover_args, song_url):
         """
         Usage:
             {command_prefix}playnext song_link
 
         Queue song to be played after now playing.
         """
-        await player.playlist.add_entry(song_url, playnext=True)
-    
+        res = await self.cmd_play(message, player, channel, author, permissions, leftover_args, song_url, playnext=True)
+        return res
+
     # command aliases
     # dirty but might better than impl new alias manager...?
     # idk decorator can be used or not
