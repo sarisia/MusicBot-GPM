@@ -2676,6 +2676,42 @@ class MusicBot(discord.Client):
 
         return Response(data, codeblock='py')
 
+    async def cmd_playnext(self, player, song_url):
+        """
+        Usage:
+            {command_prefix}playnext song_link
+
+        Queue song to be played after now playing.
+        """
+        await player.playlist.add_entry(song_url, playnext=True)
+    
+    # command aliases
+    # dirty but might better than impl new alias manager...?
+    # idk decorator can be used or not
+    async def cmd_q(self, channel, player):
+        """
+        Alias of {command_prefix}queue
+        See {command_prefix}help queue instead.
+        """
+        res = await self.cmd_queue(channel, player)
+        return res
+
+    async def cmd_p(self, message, player, channel, author, permissions, leftover_args, song_url):
+        """
+        Alias of {command_prefix}play
+        See {command_prefix}help play instead.
+        """
+        res = await self.cmd_play(message, player, channel, author, permissions, leftover_args, song_url)
+        return res
+
+    async def cmd_s(self, player, channel, author, message, permissions, voice_channel, param=''):
+        """
+        Alias of {command_prefix}skip
+        See {command_prefix}help skip instead.
+        """
+        res = await self.cmd_skip(player, channel, author, message, permissions, voice_channel, param='')
+        return res
+
     async def cmd_uc(self, player):
         """
         Usage:
