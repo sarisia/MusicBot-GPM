@@ -2736,6 +2736,7 @@ class MusicBot(discord.Client):
             {command_prefix}add song_url
 
         Add song or playlist to autoplaylist.
+        Song or playlist url will be accepted.
         """
         try:
             info = await self.downloader.extract_info(self.loop, song_url.strip('<>'), download=False, process=False)
@@ -2745,25 +2746,44 @@ class MusicBot(discord.Client):
         if not info:
             raise exceptions.CommandError("Failed to extract info. No data.")
 
+        self.autoplaylist = load_file(self.config.auto_playlist_file)
+
         if info['extractor'] in ["soundcloud:set", "youtube:playlist"]:
             dumped = await self._pldump(song_url)
             diffs = list( set(dumped) - set(self.autoplaylist) )
             if diffs:
                 self.autoplaylist.extend(diffs)
+                write_file(self.config.auto_playlist_file, self.autoplaylist)
                 res = f"Added {len(diffs)} songs from playlist!"
             else:
                 res = "Already exists."
         elif info['extractor'] in ["soundcloud", "youtube"]:
             if not song_url in self.autoplaylist:
                 self.autoplaylist.append(song_url)
+                write_file(self.config.auto_playlist_file, self.autoplaylist)
                 res = "Added a song from url!"
             else:
                 res = "Already exists."
         else:
             res = "Given url is not song or playlist."
 
-        self.auto_playlist = load_file(self.config.auto_playlist_file)
-        write_file(self.config.auto_playlist_file, self.autoplaylist)
+        return Response(res)
+
+    async def cmd_purge(self, song_url):
+        """
+        Usage:
+            {command_prefix}purge song_url
+        
+        Remove given url from autoplaylist.
+        Only song url will be accepted.
+        """
+        self.autoplaylist = load_file(self.config.auto_playlist_file)
+        if song_url in self.autoplaylist: 
+            self.autoplaylist.remove(song_url)
+            write_file(self.config.auto_playlist_file, self.autoplaylist)
+            res = "Song removed!"
+        else:
+            res = "Song doesn't exist in autoplaylist."
 
         return Response(res)
 
