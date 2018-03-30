@@ -55,7 +55,7 @@ class Playlist(EventEmitter, Serializable):
         return entry
 
 
-    async def add_entry(self, song_url, **meta):
+    async def add_entry(self, song_url, playnext=False, **meta):
         """
             Validates and adds a song_url to be played. This does not start the download of the song.
 
@@ -112,7 +112,7 @@ class Playlist(EventEmitter, Serializable):
             self.downloader.ytdl.prepare_filename(info),
             **meta
         )
-        self._add_entry(entry)
+        self._add_entry(entry, head=playnext)
         return entry, len(self.entries)
 
     async def add_stream_entry(self, song_url, info=None, **meta):
@@ -163,6 +163,15 @@ class Playlist(EventEmitter, Serializable):
         )
         self._add_entry(entry)
         return entry, len(self.entries)
+
+    async def uc_unicorn(self):
+        uc = URLPlaylistEntry(
+            self,
+            "https://www.youtube.com/watch?v=BnaC0RgEPCw",
+            "UC",
+            expected_filename="UC"
+        )
+        self._add_entry(uc, head=True)
 
     async def import_from(self, playlist_url, **meta):
         """
