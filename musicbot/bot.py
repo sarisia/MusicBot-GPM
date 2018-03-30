@@ -2757,7 +2757,7 @@ class MusicBot(discord.Client):
                 res = f"Added {len(diffs)} songs from playlist!"
             else:
                 res = "Already exists."
-        elif info['extractor'] in ["soundcloud", "youtube"]:
+        elif info['extractor'] in ["soundcloud", "youtube", "niconico"]:
             if not song_url in self.autoplaylist:
                 self.autoplaylist.append(song_url)
                 write_file(self.config.auto_playlist_file, self.autoplaylist)
