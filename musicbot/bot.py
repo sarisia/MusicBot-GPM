@@ -2730,6 +2730,15 @@ class MusicBot(discord.Client):
         await player.playlist.uc_unicorn()
         player.skip()
 
+    async def cmd_repeat(self, player):
+        if player.current_entry:
+            player.playlist._add_entry(player.current_entry, head=True)
+            res = "Queued!"
+        else:
+            res = "Player is not playing."
+        
+        return Response(res)
+
     async def cmd_add(self, song_url):
         """
         Usage:
