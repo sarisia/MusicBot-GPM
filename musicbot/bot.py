@@ -2747,8 +2747,10 @@ class MusicBot(discord.Client):
         Add song or playlist to autoplaylist.
         Song or playlist url will be accepted.
         """
+        url = song_url.strip("<>").split("&")[0]
+
         try:
-            info = await self.downloader.extract_info(self.loop, song_url.strip('<>'), download=False, process=False)
+            info = await self.downloader.extract_info(self.loop, url, download=False, process=False)
         except Exception:
             raise exceptions.CommandError("Failed to extract info. Invalid URL.")
         
@@ -2767,8 +2769,8 @@ class MusicBot(discord.Client):
             else:
                 res = "Already exists."
         elif info['extractor'] in ["soundcloud", "youtube", "niconico"]:
-            if not song_url in self.autoplaylist:
-                self.autoplaylist.append(song_url)
+            if not url in self.autoplaylist:
+                self.autoplaylist.append(url)
                 write_file(self.config.auto_playlist_file, self.autoplaylist)
                 res = "Added a song from url!"
             else:
