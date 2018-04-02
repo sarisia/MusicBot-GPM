@@ -39,6 +39,8 @@ from .utils import load_file, write_file, fixg, ftimedelta, _func_
 from .spotify import Spotify
 from .json import Json
 
+from .gpm import GPMClient
+
 from .constants import VERSION as BOTVERSION
 from .constants import DISCORD_MSG_CHAR_LIMIT, AUDIO_CACHE_PATH
 
@@ -113,6 +115,16 @@ class MusicBot(discord.Client):
                 self.config._spotify = False
             else:
                 log.info('Authenticated with Spotify successfully using client ID and secret.')
+
+        # Google Play Music
+        self.gpm = None
+        if self.config.use_gpm:
+            self.gpm = GPMClient(self.loop)
+            if not self.gpm.logged_in:
+                log.warning("Google Play Music failed to login."
+                            "Please run gpm_auth.py once and restart the bot. "
+                            "Disabling GPM...")
+                self.config.use_gpm = False
 
     def __del__(self):
         # These functions return futures but it doesn't matter
@@ -2699,6 +2711,104 @@ class MusicBot(discord.Client):
             result = await result
 
         return Response(codeblock.format(result))
+
+    # Google Play Music
+    @owner_only
+    async def cmd_updatedb(self):
+        """
+        Usage:
+            {command_prefix}updatedb
+
+        Update Google Play Music Database.
+        """
+        if not self.config.use_gpm:
+            return Response("Google Play Music is not enabled for this bot. Check your config file.")
+
+        res = await self.gpm.update_db()
+        if res:
+            text = f"DB is updated with {res} tracks!"
+        else:
+            text = "Failed to update DB."
+
+        return Response(text)
+
+    async def cmd_gpm(self, leftover_args, player, channel, author):
+        """
+        Usage:
+            {command_prefix}gpm [search_query]
+
+        Searches Google Play Music and adds it to the queue. 
+        """
+
+        if not self.config.use_gpm:
+            return Response("Google Play Music is not enabled for this bot. Check your config file.")
+        if not len(leftover_args):
+            return Response("Please enter a search query.")
+        
+        result = await self.gpm.search(leftover_args)
+        if not result:
+            return Response("Track not found.")
+
+        to_play = None
+        if len(result) == 1:
+            to_play = result[0]
+        else:        
+            await self.safe_send_message(channel, f"`{' '.join(leftover_args)}`: **{len(result)}** hits.")
+            totalpage = -(-len(result) // 5)
+
+            emojis = {
+                1: '\U00000031\U000020E3', # 1
+                2: '\U00000032\U000020E3', # 2
+                3: '\U00000033\U000020E3', # 3
+                4: '\U00000034\U000020E3', # 4
+                5: '\U00000035\U000020E3', # 5
+                -1: '\U000023E9',           # Next
+                0: '\U0000274E'           # Abort
+            }
+            inv_emojis = {value: key for key, value in emojis.items()}
+
+            for page in range(totalpage):
+                # Dirty pop
+                showing = result[0:len(result) if len(result) < 5 else 5]
+                result[0:len(result) if len(result) < 5 else 5] = []
+
+                # Constructing message
+                showing_message = f"**Showing page:** `{page + 1}/{totalpage}`\n"
+                showing_reactions = []
+                for index, item in enumerate(showing):
+                    showing_message += f"\n`{index + 1}`. `{item['artist']} - {item['title']}`"
+                    showing_reactions.append(emojis[index + 1])
+
+                if not (page + 1) == totalpage:
+                    showing_reactions.append(emojis[-1])
+
+                showing_reactions.append(emojis[0])
+
+                # Post it
+                asking = await self.safe_send_message(channel, showing_message)
+                for reaction in showing_reactions:
+                    await self.add_reaction(asking, reaction)
+
+                # Get reaction
+                clicked = await self.wait_for_reaction(showing_reactions, user=author, timeout=30, message=asking)
+                if not clicked:
+                    await self.safe_delete_message(asking)
+                    return
+                
+                selected = inv_emojis.get(clicked.reaction.emoji)
+                if not selected:
+                    await self.safe_delete_message(asking)
+                    return
+                if selected == -1:
+                    await self.safe_delete_message(asking)
+                    continue
+                else:
+                    await self.safe_delete_message(asking)
+                    to_play = showing[selected - 1]
+                    break
+        
+        await self.gpm.play(player, to_play, channel=channel, author=author)
+        return Response(f"Queued `{to_play['artist']} - {to_play['title']}`")           
 
     async def on_message(self, message):
         await self.wait_until_ready()

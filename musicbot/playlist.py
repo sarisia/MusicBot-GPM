@@ -12,7 +12,7 @@ from youtube_dl.utils import ExtractorError, DownloadError, UnsupportedError
 from .utils import get_header
 from .constructs import Serializable
 from .lib.event_emitter import EventEmitter
-from .entry import URLPlaylistEntry, StreamPlaylistEntry
+from .entry import URLPlaylistEntry, StreamPlaylistEntry, GPMPlaylistEntry
 from .exceptions import ExtractionError, WrongEntryTypeError
 
 log = logging.getLogger(__name__)
@@ -163,6 +163,17 @@ class Playlist(EventEmitter, Serializable):
         )
         self._add_entry(entry)
         return entry, len(self.entries)
+
+    # Google Play Music
+    async def add_gpm_entry(self, gpm, trackinfo, **meta):
+        entry = GPMPlaylistEntry(
+            self,
+            gpm,
+            trackinfo,
+            **meta
+        )
+
+        self._add_entry(entry)
 
     async def import_from(self, playlist_url, **meta):
         """

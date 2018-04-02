@@ -9,6 +9,7 @@ dectalk/
 discord.log
 logs/
 data/
+config/gpm/
 config/options.ini
 config/permissions.ini
 config/autoplaylist.txt

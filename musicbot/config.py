@@ -77,6 +77,9 @@ class Config:
         self.i18n_file = config.get('Files', 'i18nFile', fallback=ConfigDefaults.i18n_file)
         self.auto_playlist_removed_file = None
 
+        # Google Play Music
+        self.use_gpm = config.get('GPM', "UseGPM", fallback=False)
+
         self.run_checks()
 
         self.missing_keys = set()
