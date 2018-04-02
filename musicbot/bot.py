@@ -2931,7 +2931,11 @@ class MusicBot(discord.Client):
                 break
         
         await self.gpm.play(player, to_play, channel=channel, author=author)
-        return Response(f"Queued `{to_play['artist']} - {to_play['title']}`")           
+        return Response(f"Queued `{to_play['artist']} - {to_play['title']}`")
+
+    # GPM alias
+    async def cmd_g(self, leftover_args, player, channel, author):
+        return await self.cmd_gpm(leftover_args, player, channel, author)
 
     async def on_message(self, message):
         await self.wait_until_ready()
