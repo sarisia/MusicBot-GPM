@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 import traceback
+import pathlib
 
 from enum import Enum
 from .constructs import Serializable
@@ -326,3 +327,37 @@ class StreamPlaylistEntry(BasePlaylistEntry):
             # although maybe that should be at a slightly lower level
         finally:
             self._is_downloading = False
+
+# Google Play Music
+class GPMPlaylistEntry(BasePlaylistEntry):
+    def __init__(self, playlist, gpm, trackinfo, **meta):
+        super().__init__()
+
+        self.playlist = playlist
+        self.gpm = gpm
+        self.gpmid = trackinfo['gpmid']
+        self.url = f"gpm:track:{self.gpmid}"
+        self.title = f"{trackinfo['artist']} - {trackinfo['title']}"
+        # idk how to get duration?
+        self.duration = 0
+        self.expected_filename = f"gpm-{self.gpmid}.mp3"
+        self.meta = meta
+
+    async def _download(self):
+        if self._is_downloading:
+            return
+        # Start downloading
+        self._is_downloading = True
+
+        filepath = self.gpm.dl_dir/self.expected_filename
+        if filepath.is_file():
+            log.info(f"Already downloaded: {self.url}")
+        else:
+            result, filepath = await self.gpm.download(self)
+            if result:
+                log.info(f"Downloaded: {self.url}")
+            else:
+                raise ExtractionError("Failed to download track from Google Play Music.")
+
+        self.filename = str(filepath)
+        self._is_downloading = False

@@ -1,3 +1,34 @@
+# MusicBot with Google Play Music
+
+This is a modded MusicBot, which has all original features and can play Google Play Music!
+
+## About branch
+
+`gpm` - Based on `master` branch of latest original MusicBot.
+`master` - Based on `gpm` branch, has some custom commands.
+
+## GPM feature setup
+
+1. Run `gpm_auth.py`
+2. Open `config/options.ini` and add lines below:
+
+```
+[GPM]
+UseGPM = yes
+```
+
+3. Run MusicBot and run command `!updatedb` from discord.
+
+## Attention
+
+* Since deserializer is not implemented, PersistentQueue won't work for
+  GPM tracks.
+* You can add track to autoplaylist using `!save`, but it won't be played
+  automatically. (will implement soon...)
+
+
+# Original Document:
+
 # MusicBot
 
 [![GitHub release](https://img.shields.io/github/release/Just-Some-Bots/MusicBot.svg?style=flat-square)](https://just-some-bots.github.io/MusicBot/)
