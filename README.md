@@ -5,6 +5,7 @@ This is a modded MusicBot, which has all original features and can play Google P
 ## About branch
 
 `gpm` - Based on `master` branch of latest original MusicBot.
+
 `master` - Based on `gpm` branch, has some custom commands.
 
 ## GPM feature setup
@@ -19,13 +20,14 @@ UseGPM = yes
 
 3. Run MusicBot and run command `!updatedb` from discord.
 
-## Attention
+## Command usage
 
-* Since deserializer is not implemented, PersistentQueue won't work for
-  GPM tracks.
-* You can add track to autoplaylist using `!save`, but it won't be played
-  automatically. (will implement soon...)
+* `.updatedb`
+  * Owner only command. Updates track database.
+  * Should run when you added new tracks to Google Play Music.
 
+* `.gpm [search_word]`
+  * Search Google Play Music library.
 
 # Original Document:
 
