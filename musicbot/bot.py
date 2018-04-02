@@ -701,6 +701,11 @@ class MusicBot(discord.Client):
 
                 info = {}
 
+                # Google Play Music Hook
+                if self.config.use_gpm and song_url.startswith("gpm:"):
+                    await self.gpm.play_from_id(player, song_url)
+                    return
+
                 try:
                     info = await self.downloader.extract_info(player.playlist.loop, song_url, download=False, process=False)
                 except downloader.youtube_dl.utils.DownloadError as e:
@@ -2749,63 +2754,59 @@ class MusicBot(discord.Client):
         if not result:
             return Response("Track not found.")
 
-        to_play = None
-        if len(result) == 1:
-            to_play = result[0]
-        else:        
-            await self.safe_send_message(channel, f"`{' '.join(leftover_args)}`: **{len(result)}** hits.")
-            totalpage = -(-len(result) // 5)
+        await self.safe_send_message(channel, f"`{' '.join(leftover_args)}`: **{len(result)}** hits.")
+        totalpage = -(-len(result) // 5)
 
-            emojis = {
-                1: '\U00000031\U000020E3', # 1
-                2: '\U00000032\U000020E3', # 2
-                3: '\U00000033\U000020E3', # 3
-                4: '\U00000034\U000020E3', # 4
-                5: '\U00000035\U000020E3', # 5
-                -1: '\U000023E9',           # Next
-                0: '\U0000274E'           # Abort
-            }
-            inv_emojis = {value: key for key, value in emojis.items()}
+        emojis = {
+            1: '\U00000031\U000020E3', # 1
+            2: '\U00000032\U000020E3', # 2
+            3: '\U00000033\U000020E3', # 3
+            4: '\U00000034\U000020E3', # 4
+            5: '\U00000035\U000020E3', # 5
+            -1: '\U000023E9',           # Next
+            0: '\U0000274E'           # Abort
+        }
+        inv_emojis = {value: key for key, value in emojis.items()}
 
-            for page in range(totalpage):
-                # Dirty pop
-                showing = result[0:len(result) if len(result) < 5 else 5]
-                result[0:len(result) if len(result) < 5 else 5] = []
+        for page in range(totalpage):
+            # Dirty pop
+            showing = result[0:len(result) if len(result) < 5 else 5]
+            result[0:len(result) if len(result) < 5 else 5] = []
 
-                # Constructing message
-                showing_message = f"**Showing page:** `{page + 1}/{totalpage}`\n"
-                showing_reactions = []
-                for index, item in enumerate(showing):
-                    showing_message += f"\n`{index + 1}`. `{item['artist']} - {item['title']}`"
-                    showing_reactions.append(emojis[index + 1])
+            # Constructing message
+            showing_message = f"**Showing page:** `{page + 1}/{totalpage}`\n"
+            showing_reactions = []
+            for index, item in enumerate(showing):
+                showing_message += f"\n`{index + 1}`. `{item['artist']} - {item['title']}`"
+                showing_reactions.append(emojis[index + 1])
 
-                if not (page + 1) == totalpage:
-                    showing_reactions.append(emojis[-1])
+            if not (page + 1) == totalpage:
+                showing_reactions.append(emojis[-1])
 
-                showing_reactions.append(emojis[0])
+            showing_reactions.append(emojis[0])
 
-                # Post it
-                asking = await self.safe_send_message(channel, showing_message)
-                for reaction in showing_reactions:
-                    await self.add_reaction(asking, reaction)
+            # Post it
+            asking = await self.safe_send_message(channel, showing_message)
+            for reaction in showing_reactions:
+                await self.add_reaction(asking, reaction)
 
-                # Get reaction
-                clicked = await self.wait_for_reaction(showing_reactions, user=author, timeout=30, message=asking)
-                if not clicked:
-                    await self.safe_delete_message(asking)
-                    return
-                
-                selected = inv_emojis.get(clicked.reaction.emoji)
-                if not selected:
-                    await self.safe_delete_message(asking)
-                    return
-                if selected == -1:
-                    await self.safe_delete_message(asking)
-                    continue
-                else:
-                    await self.safe_delete_message(asking)
-                    to_play = showing[selected - 1]
-                    break
+            # Get reaction
+            clicked = await self.wait_for_reaction(showing_reactions, user=author, timeout=30, message=asking)
+            if not clicked:
+                await self.safe_delete_message(asking)
+                return
+            
+            selected = inv_emojis.get(clicked.reaction.emoji)
+            if not selected:
+                await self.safe_delete_message(asking)
+                return
+            if selected == -1:
+                await self.safe_delete_message(asking)
+                continue
+            else:
+                await self.safe_delete_message(asking)
+                to_play = showing[selected - 1]
+                break
         
         await self.gpm.play(player, to_play, channel=channel, author=author)
         return Response(f"Queued `{to_play['artist']} - {to_play['title']}`")           

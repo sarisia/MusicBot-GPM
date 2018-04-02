@@ -30,6 +30,9 @@ class Playlist(EventEmitter, Serializable):
         self.downloader = bot.downloader
         self.entries = deque()
 
+        # Google Play Music
+        self.gpm = bot.gpm
+
     def __iter__(self):
         return iter(self.entries)
 
@@ -168,7 +171,6 @@ class Playlist(EventEmitter, Serializable):
     async def add_gpm_entry(self, gpm, trackinfo, **meta):
         entry = GPMPlaylistEntry(
             self,
-            gpm,
             trackinfo,
             **meta
         )

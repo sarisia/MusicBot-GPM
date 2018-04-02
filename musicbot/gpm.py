@@ -43,6 +43,9 @@ class GPMClient():
     async def play(self, player, trackinfo, **meta):
         await player.playlist.add_gpm_entry(self, trackinfo, **meta)
 
+    async def play_from_id(self, player, gpmid):
+        trackinfo = await self.loop.run_in_executor(self.tpool, partial(self._get_trackinfo, gpmid))
+        await player.playlist.add_gpm_entry(self, trackinfo)
 
     def _update_db(self):
         tracklist = self.client.get_uploaded_songs()
@@ -63,8 +66,7 @@ class GPMClient():
     def _download(self, entry):
         target = self.dl_dir/entry.expected_filename
         # Let it try 3 times
-        retry = 0
-        while retry < 3:
+        for retry in range(3):
             filename_wuse, abyte = self.client.download_song(entry.gpmid)
             if abyte:
                 break
@@ -90,12 +92,28 @@ class GPMClient():
 
         res = []
         for item in result:
-            res.append({
-                "title": item[0],
-                "artist": item[1],
-                "album": item[2],
-                "gpmid": item[3]
-            })
+            res.append(self.factory_trackinfo(item))
 
         return res
+
+    def _get_trackinfo(self, gpmid):
+        db = sqlite3.connect(str(self.gpm_config_dir/"track.db"))
+        db.execute("CREATE TABLE IF NOT EXISTS gpm(title, artist, album, gpmid)")
+
+        true_gpmid = gpmid.split(":")[2]
+        if not true_gpmid:
+            return
+
+        cur = db.execute("SELECT * FROM gpm WHERE gpmid = ?", [true_gpmid, ])
+        result = cur.fetchone()
+
+        return self.factory_trackinfo(result)
+
+    def factory_trackinfo(self, item):
+        return {
+            "title": item[0],
+            "artist": item[1],
+            "album": item[2],
+            "gpmid": item[3]
+        }
     

@@ -330,18 +330,69 @@ class StreamPlaylistEntry(BasePlaylistEntry):
 
 # Google Play Music
 class GPMPlaylistEntry(BasePlaylistEntry):
-    def __init__(self, playlist, gpm, trackinfo, **meta):
+    def __init__(self, playlist, trackinfo, **meta):
         super().__init__()
 
         self.playlist = playlist
-        self.gpm = gpm
-        self.gpmid = trackinfo['gpmid']
+        self.trackinfo = trackinfo
+        self.gpmid = self.trackinfo['gpmid']
         self.url = f"gpm:track:{self.gpmid}"
-        self.title = f"{trackinfo['artist']} - {trackinfo['title']}"
+        self.title = f"{self.trackinfo['artist']} - {self.trackinfo['title']}"
         # idk how to get duration?
         self.duration = 0
         self.expected_filename = f"gpm-{self.gpmid}.mp3"
         self.meta = meta
+
+    # Serialize
+    def __json__(self):
+        return self._enclose_json({
+            'version': 1,
+            'trackinfo': {
+                'title': self.trackinfo['title'],
+                'artist': self.trackinfo['artist'],
+                'album': self.trackinfo['album'],
+                'gpmid': self.trackinfo['gpmid']
+            },
+            'downloaded': self.is_downloaded,
+            'filename': self.filename,
+            'meta': {
+                name: {
+                    'type': obj.__class__.__name__,
+                    'id': obj.id,
+                    'name': obj.name
+                } for name, obj in self.meta.items() if obj
+            }
+        })
+
+    # Deserialize
+    @classmethod
+    def _deserialize(cls, data, playlist=None):
+        assert playlist is not None, cls._bad('playlist')
+
+        try:
+            # idk if it is needed but it is safer.
+            trackinfo = {
+                'title': data['trackinfo']['title'],
+                'artist': data['trackinfo']['artist'],
+                'album': data['trackinfo']['album'],
+                'gpmid': data['trackinfo']['gpmid']
+            }
+            downloaded = data['downloaded']
+            filename = data['filename'] if downloaded else None
+            meta = {}
+
+            if 'channel' in data['meta']:
+                meta['channel'] = playlist.bot.get_channel(data['meta']['channel']['id'])
+
+            if 'author' in data['meta']:
+                meta['author'] = meta['channel'].server.get_member(data['meta']['author']['id'])
+
+            entry = cls(playlist, trackinfo, **meta)
+            entry.filename = filename
+
+            return entry
+        except Exception as e:
+            log.error("Could not load {}".format(cls.__name__), exc_info=e)
 
     async def _download(self):
         if self._is_downloading:
@@ -349,11 +400,11 @@ class GPMPlaylistEntry(BasePlaylistEntry):
         # Start downloading
         self._is_downloading = True
 
-        filepath = self.gpm.dl_dir/self.expected_filename
+        filepath = self.playlist.gpm.dl_dir/self.expected_filename
         if filepath.is_file():
             log.info(f"Already downloaded: {self.url}")
         else:
-            result, filepath = await self.gpm.download(self)
+            result, filepath = await self.playlist.gpm.download(self)
             if result:
                 log.info(f"Downloaded: {self.url}")
             else:
