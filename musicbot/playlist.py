@@ -164,7 +164,6 @@ class Playlist(EventEmitter, Serializable):
         self._add_entry(entry)
         return entry, len(self.entries)
 
-<<<<<<< HEAD
     async def uc_unicorn(self):
         uc = URLPlaylistEntry(
             self,
@@ -173,7 +172,6 @@ class Playlist(EventEmitter, Serializable):
             expected_filename="UC"
         )
         self._add_entry(uc, head=True)
-=======
     # Google Play Music
     async def add_gpm_entry(self, gpm, trackinfo, **meta):
         entry = GPMPlaylistEntry(
@@ -184,7 +182,6 @@ class Playlist(EventEmitter, Serializable):
         )
 
         self._add_entry(entry)
->>>>>>> gpm
 
     async def import_from(self, playlist_url, **meta):
         """
