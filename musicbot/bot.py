@@ -2779,10 +2779,11 @@ class MusicBot(discord.Client):
             result[0:len(result) if len(result) < 5 else 5] = []
 
             # Constructing message
-            showing_message = f"**Showing page:** `{page + 1}/{totalpage}`\n"
+            showing_message = "**Showing page:** `{}/{}`\n".format(page + 1, totalpage)
             showing_reactions = []
             for index, item in enumerate(showing):
-                showing_message += f"\n`{index + 1}`. `{item['artist']} - {item['title']}`"
+                showing_message += f"\n{emojis[index + 1]} `{item['artist']} - {item['title']}`"
+                showing_message += f"\n        `{item['album']}`"
                 showing_reactions.append(emojis[index + 1])
 
             if not (page + 1) == totalpage:
