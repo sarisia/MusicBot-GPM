@@ -703,7 +703,12 @@ class MusicBot(discord.Client):
 
                 # Google Play Music Hook
                 if self.config.use_gpm and song_url.startswith("gpm:"):
-                    await self.gpm.play_from_id(player, song_url)
+                    try:
+                        await self.gpm.play_from_id(player, song_url)
+                    except exceptions.ExtractionError as e:
+                        log.error("Failed to add GPM track from Autoplaylist: {}".format(e))
+                        continue
+
                     return
 
                 try:
@@ -2808,8 +2813,12 @@ class MusicBot(discord.Client):
                 to_play = showing[selected - 1]
                 break
         
-        await self.gpm.play(player, to_play, channel=channel, author=author)
-        return Response(f"Queued `{to_play['artist']} - {to_play['title']}`")           
+        entry, pos = await self.gpm.play(player, to_play, channel=channel, author=author)
+
+        # Oh my god I don't like legacy string formatting...
+        reply_text = self.str.get('cmd-play-song-reply', "Enqueued `%s` to be played. Position in queue: %s")
+        reply_text %= (entry.title, self.str.get('cmd-play-next', 'Up next!') if pos == 1 else pos)
+        return Response(reply_text)           
 
     async def on_message(self, message):
         await self.wait_until_ready()

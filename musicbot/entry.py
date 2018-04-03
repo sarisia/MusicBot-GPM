@@ -404,6 +404,7 @@ class GPMPlaylistEntry(BasePlaylistEntry):
         if filepath.is_file():
             log.info(f"Already downloaded: {self.url}")
         else:
+            log.info(f"Start downloading: {self.url}")
             result, filepath = await self.playlist.gpm.download(self)
             if result:
                 log.info(f"Downloaded: {self.url}")
@@ -412,3 +413,7 @@ class GPMPlaylistEntry(BasePlaylistEntry):
 
         self.filename = str(filepath)
         self._is_downloading = False
+
+        # DO NOT FORGET THIS
+        # Trigger ready callbacks.
+        self._for_each_future(lambda future: future.set_result(self))
