@@ -703,7 +703,12 @@ class MusicBot(discord.Client):
 
                 # Google Play Music Hook
                 if self.config.use_gpm and song_url.startswith("gpm:"):
-                    await self.gpm.play_from_id(player, song_url)
+                    try:
+                        await self.gpm.play_from_id(player, song_url)
+                    except exceptions.ExtractionError as e:
+                        log.error("Failed to add GPM track from Autoplaylist: {}".format(e))
+                        continue
+
                     return
 
                 try:
@@ -1240,7 +1245,7 @@ class MusicBot(discord.Client):
         """Provides a basic template for embeds"""
         e = discord.Embed()
         e.colour = 7506394
-        e.set_footer(text='SophieNeuenmuller/MusicBot with GPM ({})'.format(BOTVERSION), icon_url='https://i.imgur.com/GNN4aCy.jpg')
+        e.set_footer(text='SophieNeuenmuller/MusicBot with GPM({})'.format(BOTVERSION), icon_url='https://i.imgur.com/GNN4aCy.jpg')
         e.set_author(name=self.user.name, url='https://github.com/SophieNeuenmuller/MusicBot', icon_url=self.user.avatar_url)
         return e
 
@@ -2853,7 +2858,7 @@ class MusicBot(discord.Client):
 
         res = await self.gpm.update_db()
         if res:
-            text = f"DB is updated with {res} tracks!"
+            text = "DB is updated with {} tracks!".format(res)
         else:
             text = "Failed to update DB."
 
@@ -2876,7 +2881,7 @@ class MusicBot(discord.Client):
         if not result:
             return Response("Track not found.")
 
-        await self.safe_send_message(channel, f"`{' '.join(leftover_args)}`: **{len(result)}** hits.")
+        await self.safe_send_message(channel, "`{}`: **{}** hits.".format(' '.join(leftover_args), len(result)))
         totalpage = -(-len(result) // 5)
 
         emojis = {
@@ -2896,10 +2901,11 @@ class MusicBot(discord.Client):
             result[0:len(result) if len(result) < 5 else 5] = []
 
             # Constructing message
-            showing_message = f"**Showing page:** `{page + 1}/{totalpage}`\n"
+            showing_message = "**Showing page:** `{}/{}`\n".format(page + 1, totalpage)
             showing_reactions = []
             for index, item in enumerate(showing):
-                showing_message += f"\n`{index + 1}`. `{item['artist']} - {item['title']}`"
+                showing_message += "\n{} `{} - {}`".format(emojis[index + 1], item['artist'], item['artist'])
+                showing_message += "\n        `{}`".format(item['album'])
                 showing_reactions.append(emojis[index + 1])
 
             if not (page + 1) == totalpage:
@@ -2930,8 +2936,11 @@ class MusicBot(discord.Client):
                 to_play = showing[selected - 1]
                 break
         
-        await self.gpm.play(player, to_play, channel=channel, author=author)
-        return Response(f"Queued `{to_play['artist']} - {to_play['title']}`")
+        entry, pos = await self.gpm.play(player, to_play, channel=channel, author=author)
+        # Oh my god I don't like legacy string formatting...
+        reply_text = self.str.get('cmd-play-song-reply', "Enqueued `%s` to be played. Position in queue: %s")
+        reply_text %= (entry.title, self.str.get('cmd-play-next', 'Up next!') if pos == 1 else pos)
+        return Response(reply_text)
 
     # GPM alias
     async def cmd_g(self, leftover_args, player, channel, author):

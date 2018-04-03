@@ -9,6 +9,8 @@ from logging import getLogger
 allow_requests = True
 from gmusicapi import Musicmanager
 
+from .exceptions import ExtractionError
+
 log = getLogger(__name__)
 
 class GPMClient():
@@ -41,10 +43,13 @@ class GPMClient():
     
     # This is a native coroutine
     async def play(self, player, trackinfo, **meta):
-        await player.playlist.add_gpm_entry(self, trackinfo, **meta)
+        return await player.playlist.add_gpm_entry(self, trackinfo, **meta)
 
     async def play_from_id(self, player, gpmid):
         trackinfo = await self.loop.run_in_executor(self.tpool, partial(self._get_trackinfo, gpmid))
+        if not trackinfo:
+            raise ExtractionError("Failed to get trackinfo matches given GPMID.")
+            
         await player.playlist.add_gpm_entry(self, trackinfo)
 
     def _update_db(self):
@@ -107,7 +112,9 @@ class GPMClient():
         cur = db.execute("SELECT * FROM gpm WHERE gpmid = ?", [true_gpmid, ])
         result = cur.fetchone()
 
-        return self.factory_trackinfo(result)
+        db.close()
+
+        return self.factory_trackinfo(result) if result else None
 
     def factory_trackinfo(self, item):
         return {
