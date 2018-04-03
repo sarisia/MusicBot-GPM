@@ -2904,7 +2904,7 @@ class MusicBot(discord.Client):
             showing_message = "**Showing page:** `{}/{}`\n".format(page + 1, totalpage)
             showing_reactions = []
             for index, item in enumerate(showing):
-                showing_message += "\n{} `{} - {}`".format(emojis[index + 1], item['artist'], item['artist'])
+                showing_message += "\n{} `{} - {}`".format(emojis[index + 1], item['artist'], item['title'])
                 showing_message += "\n        `{}`".format(item['album'])
                 showing_reactions.append(emojis[index + 1])
 
