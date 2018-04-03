@@ -336,11 +336,11 @@ class GPMPlaylistEntry(BasePlaylistEntry):
         self.playlist = playlist
         self.trackinfo = trackinfo
         self.gpmid = self.trackinfo['gpmid']
-        self.url = f"gpm:track:{self.gpmid}"
-        self.title = f"{self.trackinfo['artist']} - {self.trackinfo['title']}"
+        self.url = "gpm:track:{}".format(self.gpmid)
+        self.title = "{} - {}".format(self.trackinfo['artist'], self.trackinfo['title'])
         # idk how to get duration?
         self.duration = 0
-        self.expected_filename = f"gpm-{self.gpmid}.mp3"
+        self.expected_filename = "gpm-{}.mp3".format(self.gpmid)
         self.meta = meta
 
     # Serialize
@@ -402,12 +402,12 @@ class GPMPlaylistEntry(BasePlaylistEntry):
 
         filepath = self.playlist.gpm.dl_dir/self.expected_filename
         if filepath.is_file():
-            log.info(f"Already downloaded: {self.url}")
+            log.info("Already downloaded: {}".format(self.url))
         else:
-            log.info(f"Start downloading: {self.url}")
+            log.info("Start downloading: {}".format(self.url))
             result, filepath = await self.playlist.gpm.download(self)
             if result:
-                log.info(f"Downloaded: {self.url}")
+                log.info("Downloaded: {}".format(self.url))
             else:
                 raise ExtractionError("Failed to download track from Google Play Music.")
 

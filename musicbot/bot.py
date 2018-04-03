@@ -2736,7 +2736,7 @@ class MusicBot(discord.Client):
 
         res = await self.gpm.update_db()
         if res:
-            text = f"DB is updated with {res} tracks!"
+            text = "DB is updated with {} tracks!".format(res)
         else:
             text = "Failed to update DB."
 
@@ -2759,7 +2759,7 @@ class MusicBot(discord.Client):
         if not result:
             return Response("Track not found.")
 
-        await self.safe_send_message(channel, f"`{' '.join(leftover_args)}`: **{len(result)}** hits.")
+        await self.safe_send_message(channel, "`{}`: **{}** hits.".format(' '.join(leftover_args), len(result)))
         totalpage = -(-len(result) // 5)
 
         emojis = {
@@ -2782,8 +2782,8 @@ class MusicBot(discord.Client):
             showing_message = "**Showing page:** `{}/{}`\n".format(page + 1, totalpage)
             showing_reactions = []
             for index, item in enumerate(showing):
-                showing_message += f"\n{emojis[index + 1]} `{item['artist']} - {item['title']}`"
-                showing_message += f"\n        `{item['album']}`"
+                showing_message += "\n{} `{} - {}`".format(emojis[index + 1], item['artist'], item['artist'])
+                showing_message += "\n        `{}`".format(item['album'])
                 showing_reactions.append(emojis[index + 1])
 
             if not (page + 1) == totalpage:
