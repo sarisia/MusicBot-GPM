@@ -2880,9 +2880,10 @@ class MusicBot(discord.Client):
         result = await self.gpm.search(leftover_args)
         if not result:
             return Response("Track not found.")
+        hits = len(result)
 
-        await self.safe_send_message(channel, "`{}`: **{}** hits.".format(' '.join(leftover_args), len(result)))
-        totalpage = -(-len(result) // 5)
+        await self.safe_send_message(channel, "`{}`: **{}** hits.".format(' '.join(leftover_args), hits))
+        totalpage = -(-hits // 5)
 
         emojis = {
             1: '\U00000031\U000020E3', # 1
@@ -2945,6 +2946,8 @@ class MusicBot(discord.Client):
                 else:
                     if not showing[selected - 1] in to_play:
                         to_play.append(showing[selected - 1])
+                        if len(to_play) == hits:
+                            break
                     continue
 
             if next_page:
