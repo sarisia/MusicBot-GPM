@@ -1245,7 +1245,7 @@ class MusicBot(discord.Client):
         """Provides a basic template for embeds"""
         e = discord.Embed()
         e.colour = 7506394
-        e.set_footer(text='SophieNeuenmuller/MusicBot with GPM({})'.format(BOTVERSION), icon_url='https://i.imgur.com/GNN4aCy.jpg')
+        e.set_footer(text='SophieNeuenmuller/MusicBot with GPM ({})'.format(BOTVERSION), icon_url='https://i.imgur.com/GNN4aCy.jpg')
         e.set_author(name=self.user.name, url='https://github.com/SophieNeuenmuller/MusicBot', icon_url=self.user.avatar_url)
         return e
 
@@ -2890,10 +2890,12 @@ class MusicBot(discord.Client):
             3: '\U00000033\U000020E3', # 3
             4: '\U00000034\U000020E3', # 4
             5: '\U00000035\U000020E3', # 5
-            -1: '\U000023E9',           # Next
-            0: '\U0000274E'           # Abort
+            -1:'\U000023E9',           # Next
+            0: '\U00002705'            # Check
         }
         inv_emojis = {value: key for key, value in emojis.items()}
+
+        to_play = []
 
         for page in range(totalpage):
             # Dirty pop
@@ -2919,27 +2921,52 @@ class MusicBot(discord.Client):
                 await self.add_reaction(asking, reaction)
 
             # Get reaction
-            clicked = await self.wait_for_reaction(showing_reactions, user=author, timeout=30, message=asking)
-            if not clicked:
-                await self.safe_delete_message(asking)
-                return
-            
-            selected = inv_emojis.get(clicked.reaction.emoji)
-            if not selected:
-                await self.safe_delete_message(asking)
-                return
-            if selected == -1:
-                await self.safe_delete_message(asking)
+            next_page = False
+
+            while True:
+                clicked = await self.wait_for_reaction(showing_reactions, user=author, timeout=30, message=asking)
+
+                # Cancel if not clicked
+                if not clicked:
+                    await self.safe_delete_message(asking)
+                    return
+                
+                selected = inv_emojis.get(clicked.reaction.emoji)
+                # Finish selecting
+                if not selected:
+                    await self.safe_delete_message(asking)
+                    break
+                # Show next page
+                if selected == -1:
+                    await self.safe_delete_message(asking)
+                    next_page = True
+                    break
+                # Track is selected
+                else:
+                    if not showing[selected - 1] in to_play:
+                        to_play.append(showing[selected - 1])
+                    continue
+
+            if next_page:
                 continue
             else:
-                await self.safe_delete_message(asking)
-                to_play = showing[selected - 1]
                 break
         
-        entry, pos = await self.gpm.play(player, to_play, channel=channel, author=author)
-        # Oh my god I don't like legacy string formatting...
-        reply_text = self.str.get('cmd-play-song-reply', "Enqueued `%s` to be played. Position in queue: %s")
-        reply_text %= (entry.title, self.str.get('cmd-play-next', 'Up next!') if pos == 1 else pos)
+        if not len(to_play):
+            return
+        elif len(to_play) == 1:
+            info = to_play[0]
+            entry, pos = await self.gpm.play(player, info, channel=channel, author=author)
+
+            # Oh my god I don't like legacy string formatting...
+            reply_text = self.str.get('cmd-play-song-reply', "Enqueued `%s` to be played. Position in queue: %s")
+            reply_text %= (entry.title, self.str.get('cmd-play-next', 'Up next!') if pos == 1 else pos)
+        else:
+            for info in to_play:
+                await self.gpm.play(player, info, channel=channel, author=author)
+
+            reply_text = "Enqueued {} songs!".format(len(to_play))
+
         return Response(reply_text)
 
     # GPM alias
