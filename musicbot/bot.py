@@ -2825,6 +2825,7 @@ class MusicBot(discord.Client):
                     if not showing[selected - 1] in to_play:
                         to_play.append(showing[selected - 1])
                         if len(to_play) == hits:
+                            await self.safe_delete_message(asking)
                             break
                     continue
 
