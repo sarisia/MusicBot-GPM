@@ -1,12 +1,12 @@
 # MusicBot with Google Play Music
 
-This is a modded MusicBot, which has all original features and can play Google Play Music!
+This is a modded MusicBot, which can play Google Play Music! (and of course all commands available in original MusicBot)
 
 ## About branch
 
-`gpm` - Based on `master` branch of latest original MusicBot.
+`master` - Based on `master` branch of latest original (upstream) MusicBot.
 
-`master` - Based on `gpm` branch, has some custom commands.
+`enhanced` - Based on `master` branch, has some useful custom commands.
 
 ## GPM feature setup
 
@@ -29,7 +29,7 @@ UseGPM = yes
 * `.gpm [search_word]`
   * Search Google Play Music library.
 
-# Original Document:
+------------------------------
 
 # MusicBot
 
