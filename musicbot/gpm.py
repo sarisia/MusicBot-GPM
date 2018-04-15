@@ -29,6 +29,8 @@ class GPMClient():
             self.credential = str(self.gpm_config_dir/"credential")
 
         self.logged_in = False
+
+        # Throws exception
         self.logged_in = self.client.login(self.credential)
     
     # Just wrap blocking functions to run in other thread.
@@ -71,8 +73,8 @@ class GPMClient():
     def _download(self, entry):
         target = self.dl_dir/entry.expected_filename
         # Let it try 3 times
-        for retry in range(3):
-            filename_wuse, abyte = self.client.download_song(entry.gpmid)
+        for _ in range(3):
+            _, abyte = self.client.download_song(entry.gpmid)
             if abyte:
                 break
 
