@@ -2804,7 +2804,7 @@ class MusicBot(discord.Client):
                 showing_message += "\n{} `{} - {}`".format(emojis[index + 1], item['artist'], item['title'])
                 showing_message += "\n        `{}`".format(item['album'])
                 if showid:
-                    showing_message += "\ngpm:track:{}".format(item['gpmid'])
+                    showing_message += "\n        gpm:track:{}".format(item['gpmid'])
                 showing_reactions.append(emojis[index + 1])
 
             if not (page + 1) == totalpage:
