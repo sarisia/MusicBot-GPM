@@ -2814,7 +2814,7 @@ class MusicBot(discord.Client):
             if diffs:
                 self.autoplaylist.extend(diffs)
                 write_file(self.config.auto_playlist_file, self.autoplaylist)
-                res = f"Added {len(diffs)} songs from playlist!"
+                res = "Added {} songs from playlist!".format(len(diffs))
             else:
                 res = "Already exists."
         elif info['extractor'] in ["soundcloud", "youtube"]:
