@@ -2887,9 +2887,22 @@ class MusicBot(discord.Client):
         Usage:
             {command_prefix}gpm [search_query]
 
-        Searches Google Play Music and adds it to the queue. 
+        Searches Google Play Music and adds it to the queue.
+        """
+        
+        return await self._gpm(leftover_args, player, channel, author)
+
+    async def cmd_gpmid(self, leftover_args, player, channel, author):
+        """
+        Usage:
+            {command_prefix}gpmid [search_query]
+
+        Same as {command_prefix}gpm, but this shows GPM URI.
         """
 
+        return await self._gpm(leftover_args, player, channel, author, showid=True)
+
+    async def _gpm(self, leftover_args, player, channel, author, showid=False):
         if not self.config.use_gpm:
             return Response("Google Play Music is not enabled for this bot. Check your config file.")
         if not len(leftover_args):
@@ -2927,6 +2940,8 @@ class MusicBot(discord.Client):
             for index, item in enumerate(showing):
                 showing_message += "\n{} `{} - {}`".format(emojis[index + 1], item['artist'], item['title'])
                 showing_message += "\n        `{}`".format(item['album'])
+                if showid:
+                    showing_message += "\n        gpm:track:{}".format(item['gpmid'])
                 showing_reactions.append(emojis[index + 1])
 
             if not (page + 1) == totalpage:
@@ -2994,6 +3009,7 @@ class MusicBot(discord.Client):
     # GPM alias
     async def cmd_g(self, leftover_args, player, channel, author):
         return await self.cmd_gpm(leftover_args, player, channel, author)
+
 
     async def on_message(self, message):
         await self.wait_until_ready()
