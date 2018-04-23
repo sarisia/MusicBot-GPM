@@ -2789,6 +2789,15 @@ class MusicBot(discord.Client):
         """
         url = song_url.strip("<>").split("&")[0]
 
+        if url.startswith("gpm:track"):
+            self.autoplaylist = load_file(self.config.auto_playlist_file)
+            if not url in self.autoplaylist:
+                self.autoplaylist.append(url)
+                write_file(self.config.auto_playlist_file, self.autoplaylist)
+                return Response("Added a song from URI!")
+            else:
+                return Response("Already exists.")
+
         try:
             info = await self.downloader.extract_info(self.loop, url, download=False, process=False)
         except Exception:
@@ -2808,7 +2817,7 @@ class MusicBot(discord.Client):
                 res = f"Added {len(diffs)} songs from playlist!"
             else:
                 res = "Already exists."
-        elif info['extractor'] in ["soundcloud", "youtube", "niconico"]:
+        elif info['extractor'] in ["soundcloud", "youtube"]:
             if not url in self.autoplaylist:
                 self.autoplaylist.append(url)
                 write_file(self.config.auto_playlist_file, self.autoplaylist)
