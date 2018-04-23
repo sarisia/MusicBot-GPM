@@ -2755,9 +2755,24 @@ class MusicBot(discord.Client):
         await player.playlist.uc_unicorn()
         player.skip()
 
-    async def cmd_repeat(self, player):
+    async def cmd_repeat(self, player, leftover_args):
+        """
+        Usage:
+            {command_prefix}repeat [times]
+
+        Repeat current song played in VC.
+        """
+        repeat = 1
+        if leftover_args:
+            given_arg = int(leftover_args[0])
+
+            if given_arg and given_arg > 0:
+                repeat = given_arg
+
         if player.current_entry:
-            player.playlist._add_entry(player.current_entry, head=True)
+            for _ in range(repeat):
+                player.playlist._add_entry(player.current_entry, head=True)
+            
             res = "Queued!"
         else:
             res = "Player is not playing."
