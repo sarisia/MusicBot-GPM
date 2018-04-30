@@ -9,6 +9,8 @@ from .constructs import Serializable
 from .exceptions import ExtractionError
 from .utils import get_header, md5sum
 
+from .gpm import GPMTrack
+
 log = logging.getLogger(__name__)
 
 
@@ -335,9 +337,9 @@ class GPMPlaylistEntry(BasePlaylistEntry):
 
         self.playlist = playlist
         self.trackinfo = trackinfo
-        self.gpmid = self.trackinfo['gpmid']
+        self.gpmid = self.trackinfo.gpmid
         self.url = "gpm:track:{}".format(self.gpmid)
-        self.title = "{} - {}".format(self.trackinfo['artist'], self.trackinfo['title'])
+        self.title = "{} - {}".format(self.trackinfo.artist, self.trackinfo.title)
         # idk how to get duration?
         self.duration = 0
         self.expected_filename = "gpm-{}.mp3".format(self.gpmid)
@@ -348,10 +350,10 @@ class GPMPlaylistEntry(BasePlaylistEntry):
         return self._enclose_json({
             'version': 1,
             'trackinfo': {
-                'title': self.trackinfo['title'],
-                'artist': self.trackinfo['artist'],
-                'album': self.trackinfo['album'],
-                'gpmid': self.trackinfo['gpmid']
+                'title': self.trackinfo.title,
+                'artist': self.trackinfo.artist,
+                'album': self.trackinfo.album,
+                'gpmid': self.trackinfo.gpmid
             },
             'downloaded': self.is_downloaded,
             'filename': self.filename,
@@ -371,12 +373,13 @@ class GPMPlaylistEntry(BasePlaylistEntry):
 
         try:
             # idk if it is needed but it is safer.
-            trackinfo = {
-                'title': data['trackinfo']['title'],
-                'artist': data['trackinfo']['artist'],
-                'album': data['trackinfo']['album'],
-                'gpmid': data['trackinfo']['gpmid']
-            }
+            trackitem = (
+                data['trackinfo']['title'],
+                data['trackinfo']['artist'],
+                data['trackinfo']['album'],
+                data['trackinfo']['gpmid']
+            )
+            trackinfo = GPMTrack(trackitem)
             downloaded = data['downloaded']
             filename = data['filename'] if downloaded else None
             meta = {}

@@ -45,14 +45,14 @@ class GPMClient():
     
     # This is a native coroutine
     async def play(self, player, trackinfo, **meta):
-        return await player.playlist.add_gpm_entry(self, trackinfo, **meta)
+        return await player.playlist.add_gpm_entry(trackinfo, **meta)
 
     async def play_from_id(self, player, gpmid):
         trackinfo = await self.loop.run_in_executor(self.tpool, partial(self._get_trackinfo, gpmid))
         if not trackinfo:
             raise ExtractionError("Failed to get trackinfo matches given GPMID.")
             
-        await player.playlist.add_gpm_entry(self, trackinfo)
+        await player.playlist.add_gpm_entry(trackinfo)
 
     def _update_db(self):
         tracklist = self.client.get_uploaded_songs()
@@ -99,7 +99,7 @@ class GPMClient():
 
         res = []
         for item in result:
-            res.append(self.factory_trackinfo(item))
+            res.append(GPMTrack(item))
 
         return res
 
@@ -116,13 +116,11 @@ class GPMClient():
 
         db.close()
 
-        return self.factory_trackinfo(result) if result else None
-
-    def factory_trackinfo(self, item):
-        return {
-            "title": item[0],
-            "artist": item[1],
-            "album": item[2],
-            "gpmid": item[3]
-        }
+        return GPMTrack(result) if result else None
     
+class GPMTrack():
+    def __init__(self, item):
+        self.title = item[0]
+        self.artist = item[1]
+        self.album = item[2]
+        self.gpmid = item[3]
