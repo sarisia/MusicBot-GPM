@@ -2947,10 +2947,10 @@ class MusicBot(discord.Client):
             showing_message = "**Showing page:** `{}/{}`\n".format(page + 1, totalpage)
             showing_reactions = []
             for index, item in enumerate(showing):
-                showing_message += "\n{} `{} - {}`".format(emojis[index + 1], item['artist'], item['title'])
-                showing_message += "\n        `{}`".format(item['album'])
+                showing_message += "\n{} `{} - {}`".format(emojis[index + 1], item.artist, item.title)
+                showing_message += "\n        `{}`".format(item.album)
                 if showid:
-                    showing_message += "\n        gpm:track:{}".format(item['gpmid'])
+                    showing_message += "\n        gpm:track:{}".format(item.gpmid)
                 showing_reactions.append(emojis[index + 1])
 
             if not (page + 1) == totalpage:
@@ -3004,7 +3004,6 @@ class MusicBot(discord.Client):
             info = to_play[0]
             entry, pos = await self.gpm.play(player, info, channel=channel, author=author)
 
-            # Oh my god I don't like legacy string formatting...
             reply_text = self.str.get('cmd-play-song-reply', "Enqueued `%s` to be played. Position in queue: %s")
             reply_text %= (entry.title, self.str.get('cmd-play-next', 'Up next!') if pos == 1 else pos)
         else:

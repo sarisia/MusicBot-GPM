@@ -176,7 +176,7 @@ class Playlist(EventEmitter, Serializable):
         )
         self._add_entry(uc, head=True)
     # Google Play Music
-    async def add_gpm_entry(self, gpm, trackinfo, **meta):
+    async def add_gpm_entry(self, trackinfo, **meta):
         entry = GPMPlaylistEntry(
             self,
             trackinfo,
