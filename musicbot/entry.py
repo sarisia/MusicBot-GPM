@@ -355,6 +355,7 @@ class GPMPlaylistEntry(BasePlaylistEntry):
                 'album': self.trackinfo.album,
                 'gpmid': self.trackinfo.gpmid
             },
+            'duration': self.duration,
             'downloaded': self.is_downloaded,
             'filename': self.filename,
             'meta': {
@@ -380,6 +381,7 @@ class GPMPlaylistEntry(BasePlaylistEntry):
                 data['trackinfo']['gpmid']
             )
             trackinfo = GPMTrack(trackitem)
+            duration = data['duration']
             downloaded = data['downloaded']
             filename = data['filename'] if downloaded else None
             meta = {}
@@ -391,6 +393,7 @@ class GPMPlaylistEntry(BasePlaylistEntry):
                 meta['author'] = meta['channel'].server.get_member(data['meta']['author']['id'])
 
             entry = cls(playlist, trackinfo, **meta)
+            entry.duration = duration
             entry.filename = filename
 
             return entry
