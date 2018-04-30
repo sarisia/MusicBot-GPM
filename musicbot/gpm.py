@@ -1,5 +1,8 @@
 import asyncio
 import sqlite3
+import subprocess
+import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
@@ -21,7 +24,6 @@ class GPMClient():
         self.bot_dir = Path.cwd()
         self.dl_dir = self.bot_dir/"audio_cache"
         self.gpm_config_dir = self.bot_dir/"config"/"gpm"
-
         self.gpm_config_dir.mkdir(exist_ok=True)
 
         self.credential = None
@@ -29,9 +31,10 @@ class GPMClient():
             self.credential = str(self.gpm_config_dir/"credential")
 
         self.logged_in = False
-
         # Throws exception
         self.logged_in = self.client.login(self.credential)
+
+        self.ffprobe = self._find_ffprobe()
     
     # Just wrap blocking functions to run in other thread.
     async def update_db(self):
@@ -84,7 +87,18 @@ class GPMClient():
         with open(target, "wb") as f:
             f.write(abyte)
 
-        return True, str(target)
+        return True, target
+
+    def _get_duration(self, audio_file):
+        target = str(audio_file)
+        cmd = self.ffprobe + " -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 " + target
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        stdout, __ = proc.communicate()
+        log.debug("ffprobe stdout says: {}".format(stdout.decode("utf-8")))
+        
+        # S**T
+        # Ensure with regular expression
+        return int(float(stdout.decode("utf-8").strip()))
 
     def _search(self, args):
         db = sqlite3.connect(str(self.gpm_config_dir/"track.db"))
@@ -117,6 +131,31 @@ class GPMClient():
         db.close()
 
         return GPMTrack(result) if result else None
+
+    def _find_ffprobe(self):
+        program = "ffprobe"
+
+        # Original: musicbot/player.py
+        def is_exe(fpath):
+            found = os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+            if not found and sys.platform == 'win32':
+                fpath = fpath + ".exe"
+                found = os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+            return found
+
+        fpath, __ = os.path.split(program)
+        if fpath:
+            if is_exe(program):
+                return program
+        else:
+            for path in os.environ["PATH"].split(os.pathsep):
+                path = path.strip('"')
+                exe_file = os.path.join(path, program)
+                if is_exe(exe_file):
+                    return exe_file
+
+        log.debug("Failed to get ffprobe.")
+        return None
     
 class GPMTrack():
     def __init__(self, item):

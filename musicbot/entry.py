@@ -406,11 +406,19 @@ class GPMPlaylistEntry(BasePlaylistEntry):
         filepath = self.playlist.gpm.dl_dir/self.expected_filename
         if filepath.is_file():
             log.info("Already downloaded: {}".format(self.url))
+            try:
+                self.duration = self.playlist.gpm._get_duration(filepath)
+            except Exception as e:
+                log.debug("Failed to get song duration: {}".format(e))
         else:
             log.info("Start downloading: {}".format(self.url))
-            result, filepath = await self.playlist.gpm.download(self)
+            result, __ = await self.playlist.gpm.download(self)
             if result:
                 log.info("Downloaded: {}".format(self.url))
+                try:
+                    self.duration = self.playlist.gpm._get_duration(filepath)
+                except Exception as e:
+                    log.debug("Failed to get song duration: {}".format(e))
             else:
                 raise ExtractionError("Failed to download track from Google Play Music.")
 
