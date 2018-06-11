@@ -122,11 +122,9 @@ class MusicBot(discord.Client):
             try:
                 self.gpm = GPMClient(self.loop)
             except:
-                log.warning("Google Play Music failed to login. "
-                            "If this is the first time using this bot, "
-                            "please run gpm_auth.py once and restart the bot. "
-                            "Otherwise, something may be wrong with Google API now."
-                            "Disabling GPM...")
+                log.warning("Google Play Music failed to login. If this is the first time using this bot, "
+                            "please run gpm_auth.py once and restart the bot. Otherwise, something may be wrong with Google API now."
+                            "Disabling GPM for this session...")
                 self.config.use_gpm = False                
 
     def __del__(self):
