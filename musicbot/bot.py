@@ -2737,11 +2737,9 @@ class MusicBot(discord.Client):
         if not self.config.use_gpm:
             return Response("Google Play Music is not enabled for this bot. Check your config file.")
 
+        await self.send_typing()
         res = await self.gpm.update_db()
-        if res:
-            text = "DB is updated with {} tracks!".format(res)
-        else:
-            text = "Failed to update DB."
+        text = "DB is updated with {} tracks!".format(res) if res else "Failed to update DB."
 
         return Response(text)
 
