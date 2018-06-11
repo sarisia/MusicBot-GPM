@@ -90,6 +90,9 @@ class GPMClient():
         return True, target
 
     def _get_duration(self, audio_file):
+        if not self.ffprobe:
+            return
+
         target = str(audio_file)
         cmd = self.ffprobe + " -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 " + target
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
